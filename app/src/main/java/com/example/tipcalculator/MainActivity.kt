@@ -6,11 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,34 +53,75 @@ class MainActivity : ComponentActivity() {
 fun TipTimeLayout() {
     var amountInput by remember { mutableStateOf("") }
     val amount = amountInput.toDoubleOrNull() ?: 0.0
-    val tip = calculateTip(amount)
-    Column(
-        modifier = Modifier
-            .statusBarsPadding()
-            .padding(horizontal = 40.dp)
-            .verticalScroll(rememberScrollState())
-            .safeDrawingPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(R.string.calculate_tip),
+    var percentage by remember { mutableStateOf(" ")}
+    val percent = percentage.toDoubleOrNull() ?:0.0
+    var isChecked by remember { mutableStateOf(false)}
+    val tip = calculateTip(amount,percent,isChecked)
+        Column(
             modifier = Modifier
-                .padding(bottom = 16.dp, top = 40.dp)
-                .align(alignment = Alignment.Start)
-        )
-        EditNumberField(
-            value = amountInput,
-            onValueChange = { amountInput = it },
-            modifier = Modifier
-                .padding(bottom = 32.dp)
-                .fillMaxWidth()
-        )
+                .statusBarsPadding()
+                .padding(horizontal = 40.dp)
+                .verticalScroll(rememberScrollState())
+                .safeDrawingPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ){
+            Text(
+                text = stringResource(R.string.calculate_tip),
+                modifier = Modifier
+                    .padding(bottom = 16.dp, top = 40.dp)
+                    .align(alignment = Alignment.Start)
+            )
+            EditNumberField(
+                value = amountInput,
+                onValueChange = { amountInput = it },
+                modifier = Modifier
+                    .padding(bottom = 32.dp)
+                    .fillMaxWidth()
+            )
+            GetTipPercentage(
+                percentage = percentage,
+                onValueChange = { percentage = it },
+                modifier = Modifier
+                    .padding(bottom = 32.dp)
+                    .fillMaxWidth()
+            )
+            SwitchChecked(
+                checked = isChecked,
+                onCheckedChange = { isChecked = it },
+                modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            )
+            Text(
+                text = stringResource(R.string.tip_amount, tip),
+                style = MaterialTheme.typography.displaySmall
+            )
+
+    }
+}
+@Composable
+fun SwitchChecked(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier) {
+    Row(modifier = modifier
+        .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+
+    )
+    {
         Text(
-            text = stringResource(R.string.tip_amount, tip),
-            style = MaterialTheme.typography.displaySmall
+            text = stringResource(id = R.string.round_up_tip),
+           modifier = Modifier.weight(1f)
         )
-        Spacer(modifier = Modifier.height(150.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(modifier = Modifier.padding(9.dp))
     }
 }
 
@@ -98,8 +140,26 @@ fun EditNumberField(
         modifier = modifier
     )
 }
-private fun calculateTip(amount: Double, tipPercent: Double = 15.0): String {
-    val tip = tipPercent / 100 * amount
+@Composable
+fun GetTipPercentage(
+    percentage: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier){
+    TextField(
+        value = percentage,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        singleLine = true,
+        label = {Text(stringResource(id = R.string.how_was_the_service))},
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+}
+
+private fun calculateTip(amount: Double, tipPercent: Double,isChecked: Boolean): String {
+    var tip = tipPercent / 100 * amount
+    if(isChecked==true){
+        tip = kotlin.math.ceil(tip)
+
+    }
     return NumberFormat.getCurrencyInstance().format(tip)
 }
 
